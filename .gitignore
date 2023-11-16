@@ -1,0 +1,4 @@
+work/
+.nextflow/
+.nextflow_log*
+rnaseq-nf.simg
