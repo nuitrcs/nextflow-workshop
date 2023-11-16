@@ -1,6 +1,11 @@
 # nextflow-workshop
 Reference materials for RCDS' "Introduction to Nextflow" workshop.
 
+### Pull Singularity container
+Before doing anything, be sure to run the following, which will create the Singularity container used in this directory's Nextflow processes.
+
+`bash singularity-container-setup.sh`
+
 ### Simple example
 
 This submits four jobs to SLURM:
