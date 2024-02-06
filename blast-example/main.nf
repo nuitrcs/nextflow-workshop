@@ -28,6 +28,8 @@
  */
 params.query = "$baseDir/data/OmpA.fasta"
 params.db = "$baseDir/blast-db/ompa/ompa"
+//params.query = "$baseDir/data/sample.fa"
+//params.db = "$baseDir/blast-db/pdb/tiny"
 params.out = "result.txt"
 params.chunkSize = 100 
 
