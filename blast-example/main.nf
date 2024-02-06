@@ -86,7 +86,6 @@ process blast {
 
     """
     blastp -db $db/$db_name -query query.fa -outfmt 6 > blast_result
-    //cat blast_result | head -n 10 | cut -f 2 > top_hits
     """
 }
 
@@ -113,6 +112,8 @@ process extract {
 
     output:
     path 'sequences'
+
+    publishDir params.out, mode:'copy', overwrite: true
 
     """
     blastdbcmd -db $db/$db_name -entry_batch top_hits | head -n 10 > sequences
