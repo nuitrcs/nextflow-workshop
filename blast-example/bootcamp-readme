@@ -7,15 +7,3 @@ cd blast-db
 makeblastdb -in ompa-db-seqs.fasta -dbtype prot -parse_seqids -out ompa/ompa
 cd ..
 
-### modify main.nf to point to new local database (old >> new)
-# params.query = "$baseDir/data/sample.fasta >> params.query = "$baseDir/data/OmpA.fasta"
-# params.db = "$baseDir/blast-db/pdb/tiny" >> params.db = "$baseDir/blast-db/ompa/ompa"
-
-
-# - note, need to add the following to main.nf processes where you want to specify output (copy in this case).
-# - at the top
-# params.out="$HOME/results.txt"
-#
-# - in the process:
-# publishDir params.outdir, mode:'copy'
-#
