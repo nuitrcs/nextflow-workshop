@@ -30,7 +30,7 @@ params.query = "$baseDir/data/OmpA.fasta"
 params.db = "$baseDir/blast-db/ompa/ompa"
 //params.query = "$baseDir/data/sample.fa"
 //params.db = "$baseDir/blast-db/pdb/tiny"
-params.out = "result.txt"
+params.out = "results"
 params.chunkSize = 100 
 
 db_name = file(params.db).name
@@ -52,7 +52,8 @@ workflow {
      * Execute a BLAST job for each chunk emitted by the 'ch_fasta' channel
      * and emit the resulting BLAST matches.
      */
-    ch_hits = blast(ch_fasta, db_dir)
+    blast_data = blast(ch_fasta, db_dir)
+    ch_hits = top_hits(blast_data)
 
     /*
      * Each time a file emitted by the 'blast' process, an extract job is executed,
@@ -64,6 +65,7 @@ workflow {
      * Collect all the sequences files into a single file
      * and print the resulting file contents when complete.
      */
+   
     ch_sequences
         .collectFile(name: params.out)
         .view { file -> "matching sequences:\n ${file.text}" }
@@ -77,12 +79,30 @@ process blast {
     path db
 
     output:
-    path 'top_hits'
+    //path 'top_hits'
+    path 'blast_result'
+
+    publishDir params.out, mode:'copy', overwrite: true
 
     """
     blastp -db $db/$db_name -query query.fa -outfmt 6 > blast_result
+    //cat blast_result | head -n 10 | cut -f 2 > top_hits
+    """
+}
+
+process top_hits {
+    input:
+    path 'blast_result'
+
+    output:
+    path 'top_hits'
+
+    publishDir params.out, mode:'copy', overwrite: true
+
+    """
     cat blast_result | head -n 10 | cut -f 2 > top_hits
     """
+
 }
 
 
@@ -93,8 +113,6 @@ process extract {
 
     output:
     path 'sequences'
-
-    // publishDir params.out, mode:'copy', overwrite: true
 
     """
     blastdbcmd -db $db/$db_name -entry_batch top_hits | head -n 10 > sequences
