@@ -1,0 +1,21 @@
+module load blast/2.9.0 nextflow/23.04.3
+
+### make custom local database
+# OmpA (ompa) is a well-characterized membrane protein in lots of bacteria
+cd blast-db
+#makeblastdb -in ompa-db-seqs.fasta -dbtype prot -out ompa/ompa
+makeblastdb -in ompa-db-seqs.fasta -dbtype prot -parse_seqids -out ompa/ompa
+cd ..
+
+### modify main.nf to point to new local database (old >> new)
+# params.query = "$baseDir/data/sample.fasta >> params.query = "$baseDir/data/OmpA.fasta"
+# params.db = "$baseDir/blast-db/pdb/tiny" >> params.db = "$baseDir/blast-db/ompa/ompa"
+
+
+# - note, need to add the following to main.nf processes where you want to specify output (copy in this case).
+# - at the top
+# params.out="$HOME/results.txt"
+#
+# - in the process:
+# publishDir params.outdir, mode:'copy'
+#
