@@ -28,14 +28,8 @@
  */
 params.query = "$baseDir/data/OmpA.fasta"
 params.db = "$baseDir/blast-db/ompa/ompa"
-//params.query = "$baseDir/data/sample.fa"
-//params.db = "$baseDir/blast-db/pdb/tiny"
 params.out = "results"
 params.chunkSize = 100 
-
-db_name = file(params.db).name
-db_dir = file(params.db).parent
-
 
 workflow {
     /*
@@ -48,18 +42,21 @@ workflow {
         .splitFasta(by: params.chunkSize, file:true)
         .set { ch_fasta }
 
+    db_name = file(params.db).name
+    db_dir = file(params.db).parent
+
     /*
      * Execute a BLAST job for each chunk emitted by the 'ch_fasta' channel
      * and emit the resulting BLAST matches.
      */
-    blast_data = blast(ch_fasta, db_dir)
+    blast_data = blast(ch_fasta, db_name, db_dir)
     ch_hits = top_hits(blast_data)
 
     /*
      * Each time a file emitted by the 'blast' process, an extract job is executed,
      * producing a file containing the matching sequences.
      */
-    ch_sequences = extract(ch_hits, db_dir)
+    ch_sequences = extract(ch_hits, db_name, db_dir)
 
     /*
      * Collect all the sequences files into a single file
@@ -75,31 +72,31 @@ workflow {
 
 process blast {
     input:
-    path 'query.fa'
-    path db
+    path ch_fasta
+    val db_name_in
+    path db_dir_in
 
     output:
-    //path 'top_hits'
     path 'blast_result'
 
     publishDir params.out, mode:'copy', overwrite: true
 
     """
-    blastp -db $db/$db_name -query query.fa -outfmt 6 > blast_result
+    blastp -db $db_dir_in/$db_name_in -query $ch_fasta -outfmt 6 > blast_result
     """
 }
 
 process top_hits {
     input:
-    path 'blast_result'
+    path blast_result
 
     output:
-    path 'top_hits'
+    path top_hits
 
     publishDir params.out, mode:'copy', overwrite: true
 
     """
-    cat blast_result | head -n 10 | cut -f 2 > top_hits
+    cat $blast_result | head -n 10 | cut -f 2 > top_hits
     """
 
 }
@@ -108,7 +105,8 @@ process top_hits {
 process extract {
     input:
     path 'top_hits'
-    path db
+    val db_name_in
+    path db_dir_in
 
     output:
     path 'sequences'
@@ -116,6 +114,6 @@ process extract {
     publishDir params.out, mode:'copy', overwrite: true
 
     """
-    blastdbcmd -db $db/$db_name -entry_batch top_hits | head -n 10 > sequences
+    blastdbcmd -db $db_dir_in/$db_name_in -entry_batch top_hits | head -n 10 > sequences
     """
 }
