@@ -32,6 +32,7 @@ params.out = "results"
 params.chunkSize = 100 
 
 workflow {
+
     /*
      * Create a channel emitting the given query fasta file(s).
      * Split the file into chunks containing as many sequences as defined by the parameter 'chunkSize'.
@@ -66,7 +67,9 @@ workflow {
     ch_sequences
         .collectFile(name: params.out)
         .view { file -> "matching sequences:\n ${file.text}" }
-        
+    
+    gpu_test()
+    
 }
 
 
@@ -117,3 +120,16 @@ process extract {
     blastdbcmd -db $db_dir_in/$db_name_in -entry_batch top_hits | head -n 10 > sequences
     """
 }
+
+process gpu_test {
+
+    label 'gpu_process'
+
+    """
+    ls /projects
+    nvidia-smi
+    """
+
+}
+
+
