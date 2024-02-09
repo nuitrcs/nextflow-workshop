@@ -7,3 +7,5 @@ cd blast-db
 makeblastdb -in ompa-db-seqs.fasta -dbtype prot -parse_seqids -out ompa/ompa
 cd ..
 
+# runOptions: define -B and --nv for containers
+
