@@ -87,7 +87,6 @@ workflow {
     alphafold_gpu(ch_alphafold_in, alphafold_cpu_output_dir)
 }
 
-
 process blast {
     input:
     path ch_fasta
@@ -114,7 +113,7 @@ process top_hits {
     publishDir params.out, mode:'copy', overwrite: true
 
     """
-    cat $blast_result | head -n 10 | cut -f 2 > top_hits
+    cat $blast_result | head -n 10 | cut -f 2 | sort | uniq > top_hits
     """
 
 }
@@ -132,7 +131,7 @@ process extract {
     publishDir params.out, mode:'copy', overwrite: true
 
     """
-    blastdbcmd -db $db_dir_in/$db_name_in -entry_batch top_hits | head -n 10 > sequences
+    blastdbcmd -db $db_dir_in/$db_name_in -entry_batch top_hits > sequences
     """
 }
 
