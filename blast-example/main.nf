@@ -67,9 +67,26 @@ workflow {
     ch_sequences
         .collectFile(name: params.out)
         .view { file -> "matching sequences:\n ${file.text}" }
-    
-    gpu_test()
-    
+
+    /*
+    *  ch_sequences contains multiple protein hits. However, we need
+    *  feed a single protein per alphafold job.
+    */
+
+    ch_sequences
+        .splitFasta( by: 1 , file: true)
+        .set { ch_alphafold_in }
+
+    /*
+    *  Create an input variable for the output directory of the
+    *  alphafold_cpu job so that we can link it to the alphafold_gpu job.
+    */
+
+    alphafold_in_dir = Channel.fromPath('out', type: 'dir')
+
+    alphafold_cpu_output_dir = alphafold_cpu(ch_alphafold_in, alphafold_in_dir)
+
+    alphafold_gpu(ch_alphafold_in, alphafold_cpu_output_dir)
 }
 
 
@@ -121,15 +138,59 @@ process extract {
     """
 }
 
-process gpu_test {
+process alphafold_cpu {
+    label 'alphafold_cpu_process'
 
-    label 'gpu_process'
+    input:
+    path ch_sequences_in
+    path alphafold_cpu_outdir
+
+    output: 
+    path alphafold_output_dir
 
     """
-    ls /projects
-    nvidia-smi
+    python /app/alphafold/run_alphafold.py --data_dir=/data \
+        --uniref90_database_path=/data/uniref90/uniref90.fasta \
+        --mgnify_database_path=/data/mgnify/mgy_clusters_2022_05.fa \
+        --uniref30_database_path=/data/uniref30/UniRef30_2021_03 \
+        --bfd_database_path=/data/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
+        --pdb70_database_path=/data/pdb70/pdb70 \
+        --template_mmcif_dir=/data/pdb_mmcif/mmcif_files \
+        --obsolete_pdbs_path=/data/pdb_mmcif/obsolete.dat \
+        --fasta_paths=$ch_sequences_in \
+        --max_template_date=2022-01-01 \
+        --model_preset=monomer \
+        --db_preset=full_dbs \
+        --only_msas=true \
+        --use_gpu_relax=False \
+        --output_dir=`pwd`/$alphafold_cpu_outdir
+    alphafold_output_dir=`pwd`/$alphafold_cpu_outdir
     """
 
 }
 
+process alphafold_gpu {
+    label 'alphafold_gpu_process'
 
+    input:
+    path ch_sequences_in
+    path alphafold_cpu_output_dir
+
+    """
+    python /app/alphafold/run_alphafold.py --data_dir=/data \
+        --uniref90_database_path=/data/uniref90/uniref90.fasta \
+        --mgnify_database_path=/data/mgnify/mgy_clusters_2022_05.fa \
+        --uniref30_database_path=/data/uniref30/UniRef30_2021_03 \
+        --bfd_database_path=/data/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
+        --pdb70_database_path=/data/pdb70/pdb70 \
+        --template_mmcif_dir=/data/pdb_mmcif/mmcif_files \
+        --obsolete_pdbs_path=/data/pdb_mmcif/obsolete.dat \
+        --fasta_paths=$ch_sequences_in \
+        --max_template_date=2022-01-01 \
+        --model_preset=monomer \
+        --db_preset=full_dbs \
+        --use_precomputed_msas=true \
+        --use_gpu_relax=False \
+        --output_dir=$alphafold_cpu_output_dir
+    """
+}

@@ -1,20 +1,8 @@
-# Blast example 
-
-A basic Blast pipeline using Nextflow 
-
-[![Build Status](https://travis-ci.org/nextflow-io/blast-example.svg?branch=master)](https://travis-ci.org/nextflow-io/blast-example)
+# Example of Running Alphafold with Next Flow on Quest
 
 ## Get started 
-
-Install Nextflow 
-
-    curl https://get.nextflow.io | bash 
-
-Run the script 
-
-    nextflow run blast-example -with-docker
-
-## Dependencies 
-
-* Java 11 or later 
-* Docker 1.10 or later 
+```
+module purge
+module load blast/2.9.0 nextflow/23.04.3
+nextflow run -profile quest_slurm -resume .
+```
