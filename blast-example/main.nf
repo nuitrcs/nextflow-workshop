@@ -78,13 +78,11 @@ workflow {
         .set { ch_alphafold_in }
 
     /*
-    *  Create an input variable for the output directory of the
+    *  Create an output variable which is the output directory of the
     *  alphafold_cpu job so that we can link it to the alphafold_gpu job.
     */
 
-    alphafold_in_dir = Channel.fromPath('out', type: 'dir')
-
-    alphafold_cpu_output_dir = alphafold_cpu(ch_alphafold_in, alphafold_in_dir)
+    alphafold_cpu_output_dir = alphafold_cpu(ch_alphafold_in)
 
     alphafold_gpu(ch_alphafold_in, alphafold_cpu_output_dir)
 }
@@ -143,12 +141,12 @@ process alphafold_cpu {
 
     input:
     path ch_sequences_in
-    path alphafold_cpu_outdir
 
     output: 
     path alphafold_output_dir
 
     """
+    mkdir -p `pwd`/out
     python /app/alphafold/run_alphafold.py --data_dir=/data \
         --uniref90_database_path=/data/uniref90/uniref90.fasta \
         --mgnify_database_path=/data/mgnify/mgy_clusters_2022_05.fa \
@@ -163,8 +161,8 @@ process alphafold_cpu {
         --db_preset=full_dbs \
         --only_msas=true \
         --use_gpu_relax=False \
-        --output_dir=`pwd`/$alphafold_cpu_outdir
-    alphafold_output_dir=`pwd`/$alphafold_cpu_outdir
+        --output_dir=`pwd`/out
+    alphafold_output_dir=`pwd`/out
     """
 
 }
