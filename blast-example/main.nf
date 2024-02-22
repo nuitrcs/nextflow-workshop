@@ -82,9 +82,8 @@ workflow {
     *  alphafold_cpu job so that we can link it to the alphafold_gpu job.
     */
 
-    alphafold_cpu_output_dir = alphafold_cpu(ch_alphafold_in)
+    alphafold_cpu(ch_alphafold_in) | alphafold_gpu
 
-    alphafold_gpu(ch_alphafold_in, alphafold_cpu_output_dir)
 }
 
 process blast {
@@ -142,10 +141,10 @@ process alphafold_cpu {
     path ch_sequences_in
 
     output: 
-    path alphafold_output_dir
+    path sequences
+    path alphafold_cpu_job_outdir
 
     """
-    mkdir -p `pwd`/out
     python /app/alphafold/run_alphafold.py --data_dir=/data \
         --uniref90_database_path=/data/uniref90/uniref90.fasta \
         --mgnify_database_path=/data/mgnify/mgy_clusters_2022_05.fa \
@@ -160,10 +159,9 @@ process alphafold_cpu {
         --db_preset=full_dbs \
         --only_msas=true \
         --use_gpu_relax=False \
-        --output_dir=`pwd`/out
-    alphafold_output_dir=`pwd`/out
+        --output_dir=alphafold_cpu_job_outdir
+    cat $ch_sequences_in > sequences
     """
-
 }
 
 process alphafold_gpu {
@@ -171,7 +169,7 @@ process alphafold_gpu {
 
     input:
     path ch_sequences_in
-    path alphafold_cpu_output_dir
+    path alphafold_cpu_job_outdir
 
     """
     python /app/alphafold/run_alphafold.py --data_dir=/data \
@@ -188,6 +186,6 @@ process alphafold_gpu {
         --db_preset=full_dbs \
         --use_precomputed_msas=true \
         --use_gpu_relax=False \
-        --output_dir=$alphafold_cpu_output_dir
+        --output_dir=$alphafold_cpu_job_outdir
     """
 }
